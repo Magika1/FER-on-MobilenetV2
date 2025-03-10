@@ -8,20 +8,23 @@ class TrainingConfig:
     num_classes = 7
 
     # 第一阶段训练配置
-    phase1_epochs = 10
+    phase1_epochs = 100
     phase1_lr = 0.001
 
     # 第二阶段训练配置
-    phase2_epochs = 20
+    phase2_epochs = 200
     phase2_feature_lr = 0.0001
     phase2_classifier_lr = 0.0005
     phase2_layers_unfreeze = 10  # 解冻的层数
 
-    # 模型保存路径
-    model_phase1_path = 'f:/coding/Graduation_project/FER/best_model_phase1.pth'
-    model_phase2_path = 'f:/coding/Graduation_project/FER/best_model_phase2.pth'
-
-    # 新增配置
+    # 修改模型保存相关配置
     checkpoint_dir = 'f:/coding/Graduation_project/FER/checkpoints'
     log_dir = 'f:/coding/Graduation_project/FER/logs'
     save_freq = 5  # 每隔多少个epoch保存一次检查点
+    
+    # 删除冗余的模型路径配置
+    # model_phase1_path 和 model_phase2_path 不再需要，因为使用checkpoint_dir统一管理
+    
+    # 早停参数
+    patience = 10
+    min_delta = 0.001

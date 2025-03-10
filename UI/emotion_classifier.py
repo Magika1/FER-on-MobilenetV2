@@ -1,7 +1,6 @@
 import cv2
 import torch
 import time
-import torch_directml
 import torchvision.transforms as transforms
 from PIL import Image
 import numpy as np
@@ -10,10 +9,11 @@ from FER.model import create_model
 class EmotionClassifier:
     def __init__(self):
         # 加载MobileNetV2模型
-        self.device = torch_directml.device()
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = create_model(self.device)
-        # 加载模型权重（需要指定训练好的模型权重路径）
-        self.model.load_state_dict(torch.load('path/to/your/model_weights.pth', map_location=self.device))
+        # 加载模型权重
+        checkpoint = torch.load('phase2_best_model.pth', map_location=self.device)
+        self.model.load_state_dict(checkpoint['model_state_dict'])  # 只加载模型权重
         self.model.eval()
         
         # 定义图像预处理

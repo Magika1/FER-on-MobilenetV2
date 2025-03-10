@@ -1,7 +1,8 @@
 import sys
 import cv2
 import numpy as np
-from PyQt6.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget, QMessageBox
+from PyQt6.QtWidgets import (QApplication, QLabel, QVBoxLayout, QWidget, 
+                           QMessageBox, QGridLayout, QComboBox)
 from PyQt6.QtGui import QImage, QPixmap
 from PyQt6.QtCore import QTimer, Qt
 from face_detector import FaceDetector
@@ -11,35 +12,44 @@ from emotion_classifier import EmotionClassifier
 class CameraApp(QWidget):
     def __init__(self):
         super().__init__()
+        self.current_camera = 0
+        self.cap = None
         self.initUI()
         self.setupCamera()
         self.face_detector = FaceDetector()
-        self.emotion_classifier = EmotionClassifier()  # 添加表情分类器
+        self.emotion_classifier = EmotionClassifier()
 
     def setupCamera(self):
-        self.cap = cv2.VideoCapture(1)
+        if self.cap is not None and self.cap.isOpened():
+            self.cap.release()
+            
+        self.cap = cv2.VideoCapture(self.current_camera)
         if not self.cap.isOpened():
-            QMessageBox.critical(self, "错误", "无法打开摄像头！")
-            sys.exit()
+            QMessageBox.critical(self, "错误", f"无法打开摄像头 {self.current_camera}！")
+            return
             
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
         
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.update_frame)
+        if not hasattr(self, 'timer'):
+            self.timer = QTimer()
+            self.timer.timeout.connect(self.update_frame)
         self.timer.start(30)
 
     def initUI(self):
         self.setWindowTitle("实时摄像头 - 人脸检测")
         self.setGeometry(100, 100, 1280, 720)
 
+        # 创建主布局
+        main_layout = QGridLayout()
+        self.setLayout(main_layout)
+        
         # 主显示标签
-        self.display_label = QLabel(self)
+        self.display_label = QLabel()
         self.display_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         # 状态标签
-        self.status_label = QLabel(self)
-        self.status_label.setText("未检测到人脸")
+        self.status_label = QLabel("未检测到人脸")
         self.status_label.setStyleSheet("""
             QLabel {
                 font-size: 24px;
@@ -49,12 +59,78 @@ class CameraApp(QWidget):
                 border-radius: 5px;
             }
         """)
-        self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.status_label.setFixedSize(250, 50)
+        
+        # 性能信息标签
+        self.performance_label = QLabel()
+        self.performance_label.setStyleSheet("""
+            QLabel {
+                font-size: 16px;
+                color: white;
+                background-color: rgba(0, 0, 0, 0.5);
+                padding: 10px;
+                border-radius: 5px;
+            }
+        """)
+        self.performance_label.setFixedSize(270, 80)
+        
+        # 添加摄像头选择下拉框
+        self.camera_combo = QComboBox()
+        self.camera_combo.setStyleSheet("""
+            QComboBox {
+                font-size: 16px;
+                color: white;
+                background-color: rgba(0, 0, 0, 0.5);
+                padding: 5px;
+                border-radius: 5px;
+                min-width: 150px;
+            }
+            QComboBox::drop-down {
+                border: none;
+            }
+            QComboBox::down-arrow {
+                image: url(down_arrow.png);
+                width: 12px;
+                height: 12px;
+            }
+        """)
+        self.camera_combo.setFixedSize(150, 30)
+        
+        # 获取可用摄像头
+        self.refresh_camera_list()
+        self.camera_combo.currentIndexChanged.connect(self.on_camera_changed)
+        
+        # 添加到布局
+        
+        # 使用网格布局
+        main_layout.addWidget(self.display_label, 0, 0, 3, 3)  # 占据整个网格
+        main_layout.addWidget(self.status_label, 0, 2, Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
+        main_layout.addWidget(self.camera_combo, 0, 0, Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        main_layout.addWidget(self.performance_label, 2, 2, Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignRight)
+        
+        # 设置布局间距
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+    
+    def refresh_camera_list(self):
+        self.camera_combo.clear()
+        # 检测系统中的摄像头
+        for i in range(5):  # 检查前5个摄像头索引
+            cap = cv2.VideoCapture(i)
+            if cap.isOpened():
+                cap.release()
+                self.camera_combo.addItem(f"摄像头 {i}", i)
 
-        layout = QVBoxLayout()
-        layout.addWidget(self.display_label)
-        layout.addWidget(self.status_label)
-        self.setLayout(layout)
+    def on_camera_changed(self, index):
+        if index >= 0:
+            self.current_camera = self.camera_combo.currentData()
+            self.setupCamera()
+
+    def closeEvent(self, event):
+        self.timer.stop()
+        if self.cap is not None and self.cap.isOpened():
+            self.cap.release()
+        event.accept()
 
     def update_frame(self):
         ret, frame = self.cap.read()
@@ -73,23 +149,13 @@ class CameraApp(QWidget):
         # 获取性能统计
         stats = self.emotion_classifier.get_performance_stats()
         
-        # 显示性能信息，使用英文并优化显示格式
-        performance_text = [
-            f"Inference Time: {stats['avg_inference_time']:.1f}ms",
-            f"FPS: {stats['fps']:.1f}",
+        # 更新性能信息标签
+        performance_text = (
+            f"Inference Time: {stats['avg_inference_time']:.1f}ms\n"
+            f"FPS: {stats['fps']:.1f}\n"
             f"Device: {stats['device']}"
-        ]
-        
-        # 在左上角显示性能信息，每行一个参数
-        for i, text in enumerate(performance_text):
-            y_pos = 30 + (i * 25)  # 每行间隔25像素
-            # 添加半透明黑色背景
-            text_size = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 1)[0]
-            cv2.rectangle(frame_rgb, (10, y_pos - 20), (10 + text_size[0], y_pos + 5), 
-                         (0, 0, 0), -1)
-            # 显示白色文字
-            cv2.putText(frame_rgb, text, (10, y_pos),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
+        )
+        self.performance_label.setText(performance_text)
 
         # 绘制检测框和表情标签
         for bbox, (emotion, score) in zip(faces, emotions):
