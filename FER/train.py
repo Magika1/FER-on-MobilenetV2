@@ -172,7 +172,7 @@ def train_model():
         train_dataset, 
         batch_size=TrainingConfig.batch_size, 
         shuffle=True, 
-        num_workers=4,  # 增加工作进程数
+        num_workers=TrainingConfig.num_workers,  # 增加工作进程数
         pin_memory=True,  # 启用内存钉扎
         prefetch_factor=2,  # 预加载因子
         persistent_workers=True  # 保持工作进程存活
@@ -181,7 +181,7 @@ def train_model():
         val_dataset, 
         batch_size=TrainingConfig.batch_size, 
         shuffle=False, 
-        num_workers=4,
+        num_workers=TrainingConfig.num_workers,
         pin_memory=True,
         prefetch_factor=2,
         persistent_workers=True

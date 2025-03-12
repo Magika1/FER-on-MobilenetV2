@@ -2,7 +2,7 @@ import sys
 import cv2
 import numpy as np
 from PyQt6.QtWidgets import (QApplication, QLabel, QVBoxLayout, QWidget,
-                             QMessageBox, QGridLayout, QComboBox, QSizePolicy, QMenuBar, QMenu)
+                           QMessageBox, QGridLayout, QComboBox, QSizePolicy)
 from PyQt6.QtGui import QImage, QPixmap
 from PyQt6.QtCore import QTimer, Qt
 from face_detector import FaceDetector
@@ -24,7 +24,6 @@ PLOT_LINE_COLOR = '#00ff00'
 PLOT_GRID_COLOR = 'gray'
 PLOT_GRID_ALPHA = 0.2
 PLOT_GRID_STYLE = '--'
-
 
 class CameraApp(QWidget):
     def __init__(self):
@@ -63,80 +62,33 @@ class CameraApp(QWidget):
 
     def initUI(self):
         self.setWindowTitle("实时摄像头 - 人脸检测")
-        self.setGeometry(100, 100, 1000, 550)
-        self.setMinimumHeight(300)  # 设置窗口最小高度
-        
-        # 创建主布局
-        main_layout = QVBoxLayout()
+        self.setGeometry(100, 100, 1280, 720)
+
+        main_layout = QGridLayout()
         self.setLayout(main_layout)
-        main_layout.setSpacing(0)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        
-        # 创建菜单栏并添加到布局
-        self.menubar = self._create_menubar()
-        main_layout.addWidget(self.menubar, 0)  # 添加stretch参数0，确保菜单栏不会被压缩
-        
-        # 创建内容布局
-        content_widget = QWidget()
-        content_widget.setMinimumHeight(250)  # 设置内容区域最小高度
-        content_layout = QGridLayout(content_widget)
-        content_layout.setSpacing(10)
-        content_layout.setContentsMargins(10, 10, 10, 10)
-    
+        main_layout.setSpacing(10)
+        main_layout.setContentsMargins(10, 10, 10, 10)
+
         left_panel = self._create_left_panel()
         right_panel = self._create_right_panel()
-    
-        content_layout.addWidget(left_panel, 0, 0, 1, 3)
-        content_layout.addWidget(right_panel, 0, 3, 1, 1)
-        content_layout.setColumnStretch(0, 3)
-        content_layout.setColumnStretch(3, 1)
-    
-        # 将内容部分添加到主布局
-        main_layout.addWidget(content_widget)
 
-    def _create_menubar(self):
-        menubar = QMenuBar(self)
-        menubar.setFixedHeight(30)  # 固定菜单栏高度
-        menubar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)  # 设置大小策略
-        menubar.setStyleSheet("""
-            QMenuBar {
-                background-color: #2b2b2b;
-                color: white;
-                font-size: 14px;
-            }
-            QMenuBar::item {
-                background: transparent;
-                padding: 5px 10px;
-            }
-            QMenuBar::item:selected {
-                background: #404040;
-            }
-            QMenu {
-                background-color: #2b2b2b;
-                color: white;
-                border: 1px solid #404040;
-            }
-            QMenu::item {
-                padding: 8px 25px;
-            }
-            QMenu::item:selected {
-                background-color: #404040;
-            }
-        """)
-        
-        camera_menu = QMenu('摄像头', self)
-        menubar.addMenu(camera_menu)
-        self.refresh_camera_list(camera_menu)
-        return menubar
+        main_layout.addWidget(left_panel, 0, 0, 1, 3)
+        main_layout.addWidget(right_panel, 0, 3, 1, 1)
+        main_layout.setColumnStretch(0, 3)
+        main_layout.setColumnStretch(3, 1)
 
     def _create_left_panel(self):
         left_panel = QWidget()
+        left_panel.setStyleSheet(f"background-color: {PLOT_BACKGROUND_COLOR};")
         left_layout = QVBoxLayout(left_panel)
         left_layout.setSpacing(10)
         left_layout.setContentsMargins(0, 0, 0, 0)
 
         self.display_label = self._create_display_label()
-        left_layout.addWidget(self.display_label)
+        plot_container = self._create_plot_container()
+
+        left_layout.addWidget(self.display_label, stretch=7)
+        left_layout.addWidget(plot_container, stretch=3)
 
         return left_panel
 
@@ -148,6 +100,43 @@ class CameraApp(QWidget):
         label.setStyleSheet("background-color: black;")
         return label
 
+    def _create_plot_container(self):
+        plot_container = QWidget()
+        plot_container.setMinimumHeight(250)
+        plot_container.setMaximumHeight(250)
+        plot_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        plot_layout = QVBoxLayout(plot_container)
+        plot_layout.setContentsMargins(0, 0, 0, 0)
+    
+        self.figure = plt.figure(figsize=(10, 4))
+        self.figure.patch.set_facecolor(PLOT_BACKGROUND_COLOR)
+        self.ax = self.figure.add_subplot(111)
+        self.ax.set_facecolor(PLOT_BACKGROUND_COLOR)
+        
+        # 设置坐标轴样式
+        self.ax.tick_params(colors='white', labelsize=10)
+        self.ax.set_xlabel('时间', color='white', fontsize=12)
+        
+        # 设置y轴刻度和标签
+        self.ax.set_yticks(range(len(EMOTION_NAMES)))
+        self.ax.set_yticklabels(EMOTION_NAMES)
+        self.ax.set_ylim(-0.5, len(EMOTION_NAMES) - 0.5)
+        
+        # 设置网格
+        self.ax.grid(True, color=PLOT_GRID_COLOR, alpha=PLOT_GRID_ALPHA, linestyle=PLOT_GRID_STYLE)
+        
+        # 设置边框颜色
+        for spine in self.ax.spines.values():
+            spine.set_color('white')
+        
+        # 调整布局
+        self.figure.subplots_adjust(left=0.15, right=0.95, top=0.9, bottom=0.2)
+
+        self.canvas = FigureCanvas(self.figure)
+        self.canvas.setStyleSheet(f"background-color: {PLOT_BACKGROUND_COLOR};")
+        plot_layout.addWidget(self.canvas)
+
+        return plot_container
 
     def _create_right_panel(self):
         right_panel = QWidget()
@@ -155,10 +144,14 @@ class CameraApp(QWidget):
         right_layout.setSpacing(20)
         right_layout.setContentsMargins(10, 10, 10, 10)
 
-        # 移除摄像头选择下拉框
+        self.camera_combo = self._create_camera_combo()
         self.status_label = self._create_status_label()
         self.performance_label = self._create_performance_label()
 
+        self.refresh_camera_list()
+        self.camera_combo.currentIndexChanged.connect(self.on_camera_changed)
+
+        right_layout.addWidget(self.camera_combo)
         right_layout.addWidget(self.status_label)
         right_layout.addWidget(self.performance_label)
         right_layout.addStretch()
@@ -211,20 +204,50 @@ class CameraApp(QWidget):
         label.setFixedHeight(80)
         return label
 
-    def refresh_camera_list(self, menu):
-        menu.clear()
+    def refresh_camera_list(self):
+        self.camera_combo.clear()
         for i in range(CAMERA_CHECK_RANGE):
             cap = cv2.VideoCapture(i)
             if cap.isOpened():
                 cap.release()
-                action = menu.addAction(f"摄像头 {i}")
-                action.setData(i)
-                action.triggered.connect(lambda checked, x=i: self.on_camera_changed(x))
+                self.camera_combo.addItem(f"摄像头 {i}", i)
 
-    def on_camera_changed(self, camera_id):
-        self.current_camera = camera_id
-        self.setupCamera()
+    def on_camera_changed(self, index):
+        if index >= 0:
+            self.current_camera = self.camera_combo.currentData()
+            self.setupCamera()
 
+    def update_emotion_plot(self):
+        if not hasattr(self, 'ax') or len(self.emotion_times) == 0:
+            return
+
+        self.ax.clear()
+
+        self.ax.set_facecolor(PLOT_BACKGROUND_COLOR)
+        self.ax.tick_params(colors='white', labelsize=10)
+        self.ax.set_xlabel('时间', color='white', fontsize=12)
+
+        times = list(self.emotion_times)
+        formatted_times = [t.strftime('%M:%S') for t in times]
+        emotion_values = [EMOTION_MAPPING[label] for label in self.emotion_labels]
+
+        self.ax.set_yticks(range(len(EMOTION_NAMES)))
+        self.ax.set_yticklabels(EMOTION_NAMES)
+        self.ax.set_ylim(-0.5, len(EMOTION_NAMES) - 0.5)
+
+        self.ax.plot(formatted_times, emotion_values, '-o', color=PLOT_LINE_COLOR, alpha=0.8, linewidth=2)
+
+        for i, (t, v, s) in enumerate(zip(formatted_times, emotion_values, self.emotion_values)):
+            if i % 2 == 0:
+                self.ax.annotate(f'{s:.2f}', (t, v), color='white',
+                               xytext=(0, 5), textcoords='offset points',
+                               ha='center', fontsize=9)
+
+        self.ax.tick_params(axis='x', rotation=45)
+        self.ax.grid(True, color=PLOT_GRID_COLOR, alpha=PLOT_GRID_ALPHA, linestyle=PLOT_GRID_STYLE)
+        self.figure.subplots_adjust(left=0.15, right=0.95, top=0.9, bottom=0.2)
+
+        self.canvas.draw()
 
     def update_frame(self):
         ret, frame = self.cap.read()
@@ -257,15 +280,15 @@ class CameraApp(QWidget):
             cv2.rectangle(frame_rgb, bbox, (0, 255, 0), 1)
 
             label = f"{emotion}: {score:.2f}"
-            cv2.putText(frame_rgb, label, (x, y - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+            cv2.putText(frame_rgb, label, (x, y-10),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
 
             self._record_emotion(emotion, score)
 
     def _record_emotion(self, emotion, score):
         current_time = datetime.now()
         if not hasattr(self, 'last_record_time') or \
-                (current_time - self.last_record_time).total_seconds() >= 1.0:
+           (current_time - self.last_record_time).total_seconds() >= 1.0:
             self.last_record_time = current_time
             self.emotion_times.append(current_time)
             self.emotion_values.append(score)
@@ -299,7 +322,6 @@ class CameraApp(QWidget):
         if self.cap.isOpened():
             self.cap.release()
         event.accept()
-
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

@@ -1,8 +1,8 @@
 class TrainingConfig:
     # 数据集配置
     csv_path = 'f:/coding/Graduation_project/FER/fer2013.csv'
-    batch_size = 32
-    num_workers = 2
+    batch_size = 64
+    num_workers = 4
 
     # 模型配置
     num_classes = 7
