@@ -1,0 +1,12 @@
+opencv-python~=4.11.0.86
+pyqt6~=6.8.1
+pyqt6-sip~=13.10.0
+mediapipe~=0.10.21
+torch~=2.4.1
+torchvision~=0.19.1
+numpy~=1.26.4
+pillow~=10.2.0
+fer~=0.1
+tqdm~=4.67.1
+pandas~=2.2.3
+setuptools~=75.8.0
