@@ -2,7 +2,7 @@ import sys
 import cv2
 import numpy as np
 from PyQt6.QtWidgets import (QApplication, QLabel, QVBoxLayout, QWidget,
-                             QMessageBox, QGridLayout, QComboBox, QSizePolicy, QMenuBar, QMenu)
+                            QMessageBox, QGridLayout, QComboBox, QSizePolicy, QMenuBar, QMenu)
 from PyQt6.QtGui import QImage, QPixmap
 from PyQt6.QtCore import QTimer, Qt
 from face_detector import FaceDetector
@@ -18,6 +18,15 @@ EMOTION_MAPPING = {
     'angry': 0, 'disgust': 1, 'fear': 2,
     'happy': 3, 'sad': 4, 'surprise': 5, 'neutral': 6
 }
+EMOJI_MAPPING = {
+    'angry': '😠',
+    'disgust': '🤢',
+    'fear': '😨',
+    'happy': '😊',
+    'sad': '😢',
+    'surprise': '😲',
+    'neutral': '😐'
+}
 EMOTION_NAMES = ['生气', '厌恶', '恐惧', '开心', '悲伤', '惊讶', '平静']
 PLOT_BACKGROUND_COLOR = '#2b2b2b'
 PLOT_LINE_COLOR = '#00ff00'
@@ -26,7 +35,7 @@ PLOT_GRID_ALPHA = 0.2
 PLOT_GRID_STYLE = '--'
 
 
-class CameraApp(QWidget):
+class UIapp(QWidget):
     def __init__(self):
         super().__init__()
         self._setup_matplotlib()
@@ -64,37 +73,38 @@ class CameraApp(QWidget):
     def initUI(self):
         self.setWindowTitle("实时摄像头 - 人脸检测")
         self.setGeometry(100, 100, 1000, 550)
-        self.setMinimumHeight(300)  # 设置窗口最小高度
+        self.setMinimumHeight(300)
         
         # 创建主布局
-        main_layout = QVBoxLayout()
-        self.setLayout(main_layout)
-        main_layout.setSpacing(0)
-        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout = QVBoxLayout()                # 创建垂直布局
+        self.setLayout(main_layout)                # 设置为窗口的主布局
+        main_layout.setSpacing(0)                  # 设置组件间距为0
+        main_layout.setContentsMargins(0, 0, 0, 0) # 设置边距为0
         
-        # 创建菜单栏并添加到布局
-        self.menubar = self._create_menubar()
-        main_layout.addWidget(self.menubar, 0)  # 添加stretch参数0，确保菜单栏不会被压缩
+        # 创建并添加菜单栏
+        self._create_menubar(main_layout)
         
-        # 创建内容布局
+        # 创建并添加内容区域
+        self._create_content_area(main_layout)
+
+    def _create_content_area(self, parent_layout):
         content_widget = QWidget()
-        content_widget.setMinimumHeight(250)  # 设置内容区域最小高度
+        content_widget.setMinimumHeight(250)
         content_layout = QGridLayout(content_widget)
         content_layout.setSpacing(10)
         content_layout.setContentsMargins(10, 10, 10, 10)
-    
-        left_panel = self._create_left_panel()
-        right_panel = self._create_right_panel()
-    
-        content_layout.addWidget(left_panel, 0, 0, 1, 3)
-        content_layout.addWidget(right_panel, 0, 3, 1, 1)
+        
+        # 创建并添加左右面板
+        self._create_left_panel(content_layout)
+        self._create_right_panel(content_layout)
+        
         content_layout.setColumnStretch(0, 3)
         content_layout.setColumnStretch(3, 1)
-    
-        # 将内容部分添加到主布局
-        main_layout.addWidget(content_widget)
+        
+        parent_layout.addWidget(content_widget)
+        return content_widget
 
-    def _create_menubar(self):
+    def _create_menubar(self, parent_layout):
         menubar = QMenuBar(self)
         menubar.setFixedHeight(30)  # 固定菜单栏高度
         menubar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)  # 设置大小策略
@@ -127,63 +137,59 @@ class CameraApp(QWidget):
         camera_menu = QMenu('摄像头', self)
         menubar.addMenu(camera_menu)
         self.refresh_camera_list(camera_menu)
+        parent_layout.addWidget(menubar, 0)
         return menubar
 
-    def _create_left_panel(self):
+    def _create_left_panel(self, parent_layout):
         left_panel = QWidget()
         left_layout = QVBoxLayout(left_panel)
         left_layout.setSpacing(10)
         left_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.display_label = self._create_display_label()
-        left_layout.addWidget(self.display_label)
-
+        self._create_display_label(left_layout)
+        parent_layout.addWidget(left_panel, 0, 0, 1, 3)
         return left_panel
 
-    def _create_display_label(self):
+    def _create_display_label(self, parent_layout):
         label = QLabel()
         label.setMinimumSize(800, 450)
         label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         label.setStyleSheet("background-color: black;")
+        parent_layout.addWidget(label)
         return label
 
-
-    def _create_right_panel(self):
+    def _create_right_panel(self, parent_layout):
         right_panel = QWidget()
         right_layout = QVBoxLayout(right_panel)
         right_layout.setSpacing(20)
         right_layout.setContentsMargins(10, 10, 10, 10)
 
-        # 移除摄像头选择下拉框
-        self.status_label = self._create_status_label()
-        self.performance_label = self._create_performance_label()
+        self._create_status_label(right_layout)
+        self._create_emoji_label(right_layout)  
+        self._create_performance_label(right_layout)
 
-        right_layout.addWidget(self.status_label)
-        right_layout.addWidget(self.performance_label)
         right_layout.addStretch()
-
+        
+        parent_layout.addWidget(right_panel, 0, 3, 1, 1)
         return right_panel
 
-    def _create_camera_combo(self):
-        combo = QComboBox()
-        combo.setStyleSheet("""
-            QComboBox {
-                font-size: 16px;
-                color: white;
+    def _create_emoji_label(self, parent_layout):
+        label = QLabel()
+        label.setStyleSheet("""
+            QLabel {
+                font-size: 32px;
                 background-color: rgba(0, 0, 0, 0.5);
-                padding: 5px;
+                padding: 10px;
                 border-radius: 5px;
-                min-width: 150px;
-            }
-            QComboBox::drop-down {
-                border: none;
             }
         """)
-        combo.setFixedHeight(30)
-        return combo
+        label.setFixedHeight(60)
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        parent_layout.addWidget(label)
+        return label
 
-    def _create_status_label(self):
+    def _create_status_label(self, parent_layout):
         label = QLabel("未检测到人脸")
         label.setStyleSheet("""
             QLabel {
@@ -195,9 +201,10 @@ class CameraApp(QWidget):
             }
         """)
         label.setFixedHeight(50)
+        parent_layout.addWidget(label)
         return label
 
-    def _create_performance_label(self):
+    def _create_performance_label(self, parent_layout):
         label = QLabel()
         label.setStyleSheet("""
             QLabel {
@@ -209,6 +216,7 @@ class CameraApp(QWidget):
             }
         """)
         label.setFixedHeight(80)
+        parent_layout.addWidget(label)
         return label
 
     def refresh_camera_list(self, menu):
@@ -225,13 +233,12 @@ class CameraApp(QWidget):
         self.current_camera = camera_id
         self.setupCamera()
 
-
     def update_frame(self):
         ret, frame = self.cap.read()
         if not ret:
             return
 
-        frame = cv2.flip(frame, 1)
+        # frame = cv2.flip(frame, 1)
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
         faces, face_detected = self.face_detector.detect(frame)
@@ -241,7 +248,7 @@ class CameraApp(QWidget):
         self._update_performance_label(stats)
         self._draw_faces_and_emotions(frame_rgb, faces, emotions)
         self._update_display(frame_rgb)
-        self._update_status_label(face_detected)
+        self._update_status_label(face_detected, faces)
 
     def _update_performance_label(self, stats):
         performance_text = (
@@ -252,6 +259,10 @@ class CameraApp(QWidget):
         self.performance_label.setText(performance_text)
 
     def _draw_faces_and_emotions(self, frame_rgb, faces, emotions):
+        if not faces or not emotions:
+            self.emoji_label.setText("❓")
+            return
+
         for bbox, (emotion, score) in zip(faces, emotions):
             x, y, w, h = bbox
             cv2.rectangle(frame_rgb, bbox, (0, 255, 0), 1)
@@ -259,18 +270,11 @@ class CameraApp(QWidget):
             label = f"{emotion}: {score:.2f}"
             cv2.putText(frame_rgb, label, (x, y - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
-
-            self._record_emotion(emotion, score)
-
-    def _record_emotion(self, emotion, score):
-        current_time = datetime.now()
-        if not hasattr(self, 'last_record_time') or \
-                (current_time - self.last_record_time).total_seconds() >= 1.0:
-            self.last_record_time = current_time
-            self.emotion_times.append(current_time)
-            self.emotion_values.append(score)
-            self.emotion_labels.append(emotion)
-            self.update_emotion_plot()
+            
+            # 更新 emoji 显示（只显示第一个检测到的人脸的表情）
+            emoji = EMOJI_MAPPING.get(emotion, '❓')
+            self.emoji_label.setText(f"{EMOTION_NAMES[EMOTION_MAPPING[emotion]]} {emoji}")
+            break
 
     def _update_display(self, frame_rgb):
         height, width, channel = frame_rgb.shape
@@ -282,8 +286,9 @@ class CameraApp(QWidget):
             Qt.TransformationMode.SmoothTransformation
         ))
 
-    def _update_status_label(self, face_detected):
-        self.status_label.setText("已检测到人脸" if face_detected else "未检测到人脸")
+    def _update_status_label(self, face_detected, faces):
+        face_count = len(faces) if faces is not None and face_detected else 0
+        self.status_label.setText(f"已检测到 {face_count} 个人脸" if face_detected else "未检测到人脸")
         self.status_label.setStyleSheet(f"""
             QLabel {{
                 font-size: 24px;
@@ -303,6 +308,6 @@ class CameraApp(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = CameraApp()
+    window = UIapp()
     window.show()
     sys.exit(app.exec())

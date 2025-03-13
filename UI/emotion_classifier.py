@@ -12,7 +12,7 @@ class EmotionClassifier:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = create_model(self.device)
         # 加载模型权重
-        checkpoint = torch.load('D:\program\FER-on-MobilenetV2\phase2_best_model.pth', map_location=self.device)
+        checkpoint = torch.load('D:\program\FER-on-MobilenetV2\phase2_best.pth', map_location=self.device,weights_only=True)
         self.model.load_state_dict(checkpoint['model_state_dict'])  # 只加载模型权重
         self.model.eval()
         
