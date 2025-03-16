@@ -30,7 +30,7 @@ EMOJI_MAPPING = {
 }
 
 # 摄像头配置
-CAMERA_CHECK_RANGE = 10
+CAMERA_CHECK_RANGE = 5
 
 # UI配置
 WINDOW_TITLE = "实时摄像头 - 人脸检测"

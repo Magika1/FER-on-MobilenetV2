@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QImage, QPixmap
 import cv2
-from assets import EMOTION_MAPPING, EMOTION_NAMES, EMOJI_MAPPING
+from ui.assets import EMOTION_MAPPING, EMOTION_NAMES, EMOJI_MAPPING
 
 class ContentArea(QWidget):
     def __init__(self, parent=None):

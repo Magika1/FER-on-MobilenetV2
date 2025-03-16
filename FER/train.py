@@ -11,7 +11,7 @@ import os
 from torch.optim.lr_scheduler import CosineAnnealingLR
 import torch.backends.cudnn as cudnn
 import logging
-from utils import setup_logger, load_checkpoint, train_phase
+from fer.utils import setup_logger, load_checkpoint, train_phase
 
 def train_model():
     setup_logger()
