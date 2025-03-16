@@ -1,10 +1,9 @@
-import os
 import torch
 from torch.utils.data import Dataset
 from PIL import Image
-import torchvision.transforms as transforms
 import pandas as pd
 import numpy as np
+from utils.transforms import get_data_transforms
 
 class FERDataset(Dataset):
     def __init__(self, csv_file, transform=None, mode='train'):
@@ -19,21 +18,16 @@ class FERDataset(Dataset):
         self.mode = mode
 
         # 根据模式选择数据
-        if mode == 'train':
-            self.data_frame = self.data_frame[self.data_frame['Usage'] == 'Training']
-        elif mode == 'val':
-            self.data_frame = self.data_frame[self.data_frame['Usage'] == 'PublicTest']
-        elif mode == 'test':
-            self.data_frame = self.data_frame[self.data_frame['Usage'] == 'PrivateTest']
+        usage_map = {
+            'train': 'Training',
+            'val': 'PublicTest',
+            'test': 'PrivateTest'
+        }
+        self.data_frame = self.data_frame[self.data_frame['Usage'] == usage_map[mode]]
 
         if self.transform is None:
-            self.transform = transforms.Compose([
-                transforms.Resize(256),
-                transforms.CenterCrop(224),
-                transforms.ToTensor(),  # 将图像值缩放到 0-1
-                transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                std=[0.229, 0.224, 0.225])
-        ])
+            _, test_transform = get_data_transforms()
+            self.transform = test_transform
 
     def __len__(self):
         return len(self.data_frame)
@@ -49,7 +43,6 @@ class FERDataset(Dataset):
         
         # 将灰度图像转换为RGB图像
         image = Image.fromarray(pixels).convert('RGB')
-        
         label = self.data_frame.iloc[idx]['emotion']
 
         if self.transform:
@@ -57,57 +50,19 @@ class FERDataset(Dataset):
 
         return image, label
 
-def get_data_transforms():
-    """
-    返回训练和测试数据的转换
-    """
-    train_transform = transforms.Compose([
-        transforms.Resize(256),
-        transforms.CenterCrop(224),
-        transforms.RandomHorizontalFlip(),
-        transforms.RandomRotation(10),
-        transforms.ColorJitter(brightness=0.2, contrast=0.2),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], 
-                        std=[0.229, 0.224, 0.225])
-    ])
-
-    test_transform = transforms.Compose([
-        transforms.Resize(256),
-        transforms.CenterCrop(224),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], 
-                        std=[0.229, 0.224, 0.225])
-    ])
-
-    return train_transform, test_transform
-
 def create_datasets(csv_file):
     """
     从FER2013数据集创建训练、验证和测试数据集
     """
     train_transform, test_transform = get_data_transforms()
 
-    train_dataset = FERDataset(
-        csv_file=csv_file,
-        transform=train_transform,
-        mode='train'
-    )
+    datasets = {
+        'train': FERDataset(csv_file=csv_file, transform=train_transform, mode='train'),
+        'val': FERDataset(csv_file=csv_file, transform=test_transform, mode='val'),
+        'test': FERDataset(csv_file=csv_file, transform=test_transform, mode='test')
+    }
 
-    val_dataset = FERDataset(
-        csv_file=csv_file,
-        transform=test_transform,
-        mode='val'
-    )
-
-    test_dataset = FERDataset(
-        csv_file=csv_file,
-        transform=test_transform,
-        mode='test'
-    )
-
-    return train_dataset, val_dataset, test_dataset
-
+    return datasets['train'], datasets['val'], datasets['test']
 
 if __name__ == '__main__':
     # 测试数据集加载
@@ -130,9 +85,5 @@ if __name__ == '__main__':
         print(f"\n批次数据形状: {images.shape}")
         print(f"标签形状: {labels.shape}")
         print(f"标签示例: {labels[:5]}")
-        
-        # 验证数据范围
         print(f"图像数据范围: [{images.min():.3f}, {images.max():.3f}]")
-        
-        # 只打印第一个批次的信息就退出
         break

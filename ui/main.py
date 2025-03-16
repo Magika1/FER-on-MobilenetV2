@@ -1,34 +1,21 @@
 import sys
 import cv2
+from collections import deque
 from PyQt6.QtWidgets import (QApplication, QLabel, QVBoxLayout, QWidget,
                             QMessageBox, QGridLayout, QSizePolicy, QMenuBar, QMenu)
 from PyQt6.QtGui import QImage, QPixmap
 from PyQt6.QtCore import QTimer, Qt
-from face_detector import FaceDetector
-from emotion_classifier import EmotionClassifier
-from collections import deque
-
-# 常量定义
-CAMERA_CHECK_RANGE = 5
-EMOTION_MAPPING = {
-    'angry': 0, 'disgust': 1, 'fear': 2,
-    'happy': 3, 'sad': 4, 'surprise': 5, 'neutral': 6
-}
-EMOJI_MAPPING = {
-    'angry': '😠',
-    'disgust': '🤢',
-    'fear': '😨',
-    'happy': '😊',
-    'sad': '😢',
-    'surprise': '😲',
-    'neutral': '😐'
-}
-EMOTION_NAMES = ['生气', '厌恶', '恐惧', '开心', '悲伤', '惊讶', '平静']
-PLOT_BACKGROUND_COLOR = '#2b2b2b'
-PLOT_LINE_COLOR = '#00ff00'
-PLOT_GRID_COLOR = 'gray'
-PLOT_GRID_ALPHA = 0.2
-PLOT_GRID_STYLE = '--'
+from modules import FaceDetector, EmotionClassifier
+from utils.style_loader import load_stylesheet
+from assets import (
+    EMOTION_MAPPING,
+    EMOTION_NAMES,
+    EMOJI_MAPPING,
+    CAMERA_CHECK_RANGE,
+    WINDOW_TITLE,
+    WINDOW_GEOMETRY,
+    WINDOW_MIN_HEIGHT
+)
 
 
 class UIapp(QWidget):
@@ -39,6 +26,9 @@ class UIapp(QWidget):
         self.emotion_times = deque(maxlen=30)  # 保存最近30秒的记录
         self.emotion_values = deque(maxlen=30)
         self.emotion_labels = deque(maxlen=30)
+
+        self.setStyleSheet(load_stylesheet('dark'))
+
         self.initUI()
         self.setupCamera()
         self.face_detector = FaceDetector()
@@ -139,10 +129,10 @@ class UIapp(QWidget):
 
     def _create_display_label(self):
         label = QLabel()
+        label.setObjectName("display_label")  # 设置对象名，用于样式表匹配
         label.setMinimumSize(800, 450)
         label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        label.setStyleSheet("background-color: black;")
         self.left_layout.addWidget(label)
         return label
 
@@ -163,14 +153,7 @@ class UIapp(QWidget):
 
     def _create_emoji_label(self):
         label = QLabel()
-        label.setStyleSheet("""
-            QLabel {
-                font-size: 32px;
-                background-color: rgba(0, 0, 0, 0.5);
-                padding: 10px;
-                border-radius: 5px;
-            }
-        """)
+        label.setObjectName("emoji_label")
         label.setFixedHeight(60)
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.right_layout.addWidget(label)
@@ -178,15 +161,7 @@ class UIapp(QWidget):
 
     def _create_status_label(self):
         label = QLabel("未检测到人脸")
-        label.setStyleSheet("""
-            QLabel {
-                font-size: 24px;
-                color: red;
-                background-color: rgba(0, 0, 0, 0.5);
-                padding: 10px;
-                border-radius: 5px;
-            }
-        """)
+        label.setObjectName("status_label")
         label.setFixedHeight(50)
         self.right_layout.addWidget(label)
         return label
@@ -194,15 +169,7 @@ class UIapp(QWidget):
 
     def _create_performance_label(self):
         label = QLabel()
-        label.setStyleSheet("""
-            QLabel {
-                font-size: 16px;
-                color: white;
-                background-color: rgba(0, 0, 0, 0.5);
-                padding: 10px;
-                border-radius: 5px;
-            }
-        """)
+        label.setObjectName("performance_label")
         label.setFixedHeight(80)
         self.right_layout.addWidget(label)
         return label
@@ -277,15 +244,9 @@ class UIapp(QWidget):
     def _update_status_label(self, face_detected, faces):
         face_count = len(faces) if faces is not None and face_detected else 0
         self.status_label.setText(f"已检测到 {face_count} 个人脸" if face_detected else "未检测到人脸")
-        self.status_label.setStyleSheet(f"""
-            QLabel {{
-                font-size: 24px;
-                color: {'green' if face_detected else 'red'};
-                background-color: rgba(0, 0, 0, 0.5);
-                padding: 10px;
-                border-radius: 5px;
-            }}
-        """)
+        self.status_label.setProperty("detected", face_detected)  # 使用属性来控制颜色
+        self.status_label.style().unpolish(self.status_label)  # 刷新样式
+        self.status_label.style().polish(self.status_label)
 
     def closeEvent(self, event):
         self.timer.stop()

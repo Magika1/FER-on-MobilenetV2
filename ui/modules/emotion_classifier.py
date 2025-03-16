@@ -3,8 +3,7 @@ import torch
 import time
 import torchvision.transforms as transforms
 from PIL import Image
-import numpy as np
-from FER.model import create_model
+from fer.model import create_model
 
 class EmotionClassifier:
     def __init__(self):
