@@ -25,9 +25,6 @@ class EmotionMobileNetV2(nn.Module):
         return self.model(x)
 
 def create_model(device):
-    """
-    创建模型并移动到指定设备
-    """
     model = EmotionMobileNetV2()
     model = model.to(device)
     return model

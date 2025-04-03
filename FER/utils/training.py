@@ -2,6 +2,20 @@ import torch
 from tqdm import tqdm
 import logging
 from .checkpoint import save_checkpoint
+from fer.config import TrainingConfig 
+from sklearn.metrics import precision_recall_fscore_support, accuracy_score
+
+
+def calculate_metrics(y_true, y_pred):
+    """计算各项评估指标"""
+    accuracy = accuracy_score(y_true, y_pred)
+    precision, recall, f1, _ = precision_recall_fscore_support(y_true, y_pred, average='weighted')
+    return {
+        'accuracy': accuracy * 100,  # 转换为百分比
+        'precision': precision * 100,
+        'recall': recall * 100,
+        'f1': f1 * 100
+    }
 
 def train_epoch(model, train_loader, criterion, optimizer, device, epoch):
     """训练一个epoch"""
@@ -55,19 +69,23 @@ def validate(model, val_loader, criterion, device):
             all_predictions.extend(predicted.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
     
-    return running_loss/len(val_loader), 100.*correct/total, all_predictions, all_labels
+    metrics = calculate_metrics(all_labels, all_predictions)
+    return running_loss/len(val_loader), metrics, all_predictions, all_labels
 
 def train_phase(phase, model, train_loader, val_loader, criterion, optimizer, scheduler, 
                 num_epochs, device, start_epoch=0, best_val_acc=0, history=None):
     """训练一个阶段"""
     if history is None:
-        history = {'train_loss': [], 'train_acc': [], 'val_loss': [], 'val_acc': []}
+        history = {
+            'train_loss': [], 'train_metrics': [],
+            'val_loss': [], 'val_metrics': []
+        }
     
     patience_counter = 0  # 早停计数器
     
     for epoch in range(start_epoch, num_epochs):
         train_loss, train_acc = train_epoch(model, train_loader, criterion, optimizer, device, epoch)
-        val_loss, val_acc, predictions, labels = validate(model, val_loader, criterion, device)
+        val_loss, val_metrics, predictions, labels = validate(model, val_loader, criterion, device)
         
         # 更新学习率
         scheduler.step()
@@ -75,12 +93,21 @@ def train_phase(phase, model, train_loader, val_loader, criterion, optimizer, sc
         logging.info(f'当前学习率: {current_lr:.6f}')
         
         history['train_loss'].append(train_loss)
-        history['train_acc'].append(train_acc)
+        history['train_metrics'].append({'accuracy': train_acc})
         history['val_loss'].append(val_loss)
-        history['val_acc'].append(val_acc)
+        history['val_metrics'].append(val_metrics)
+
+        # 使用验证集准确率作为主要指标
+        val_acc = val_metrics['accuracy']
         
-        logging.info(f'Epoch {epoch+1}: Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.2f}%, '
-                    f'Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.2f}%')
+        logging.info(
+            f'Epoch {epoch+1}: '
+            f'Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.2f}%, '
+            f'Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.2f}%, '
+            f'Val Precision: {val_metrics["precision"]:.2f}%, '
+            f'Val Recall: {val_metrics["recall"]:.2f}%, '
+            f'Val F1: {val_metrics["f1"]:.2f}%'
+        )
         
         # 检查是否有性能提升
         if val_acc - best_val_acc > TrainingConfig.min_delta:

@@ -64,26 +64,41 @@ def create_datasets(csv_file):
 
     return datasets['train'], datasets['val'], datasets['test']
 
-if __name__ == '__main__':
-    # 测试数据集加载
-    csv_path = 'f:/coding/Graduation_project/FER/fer2013.csv'
+def create_dataloaders(csv_file, batch_size, num_workers):
+    """
+    创建训练、验证和测试数据加载器
+    """
+    train_dataset, val_dataset, test_dataset = create_datasets(csv_file)
     
-    # 创建数据集
-    train_dataset, val_dataset, test_dataset = create_datasets(csv_path)
-    
-    print(f"训练集大小: {len(train_dataset)}")
-    print(f"验证集大小: {len(val_dataset)}")
-    print(f"测试集大小: {len(test_dataset)}")
-    
-    # 测试数据加载器
-    train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=32, shuffle=True, num_workers=0
+    train_loader = DataLoader(
+        train_dataset, 
+        batch_size=batch_size, 
+        shuffle=True, 
+        num_workers=num_workers,
+        pin_memory=True,
+        prefetch_factor=2,
+        persistent_workers=True
     )
     
-    # 获取一个批次的数据并显示其信息
-    for images, labels in train_loader:
-        print(f"\n批次数据形状: {images.shape}")
-        print(f"标签形状: {labels.shape}")
-        print(f"标签示例: {labels[:5]}")
-        print(f"图像数据范围: [{images.min():.3f}, {images.max():.3f}]")
-        break
+    val_loader = DataLoader(
+        val_dataset, 
+        batch_size=batch_size, 
+        shuffle=False, 
+        num_workers=num_workers,
+        pin_memory=True,
+        prefetch_factor=2,
+        persistent_workers=True
+    )
+    
+    test_loader = DataLoader(
+        test_dataset, 
+        batch_size=batch_size, 
+        shuffle=False, 
+        num_workers=num_workers,
+        pin_memory=True,
+        prefetch_factor=2,
+        persistent_workers=True
+    )
+    
+    return train_loader, val_loader, test_loader
+    

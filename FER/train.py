@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from fer.dataset import create_datasets
+from fer.dataset import create_datasets, create_dataloaders
 from fer.model import create_model
 from fer.config import TrainingConfig
 import json
@@ -14,6 +14,8 @@ import logging
 from fer.utils.logger import setup_logger
 from fer.utils.checkpoint import load_checkpoint
 from fer.utils.training import train_phase
+from fer.utils.visualize import plot_training_history
+
 
 def train_phase1(model, train_loader, val_loader, device):
     """第一阶段训练：仅训练分类器部分"""
@@ -24,7 +26,11 @@ def train_phase1(model, train_loader, val_loader, device):
         param.requires_grad = False
     
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.model.classifier.parameters(), lr=TrainingConfig.phase1_lr)
+    optimizer = optim.Adam(
+        model.model.classifier.parameters(), 
+        lr=TrainingConfig.phase1_lr,
+        weight_decay=1e-4  # 添加L2正则化
+    )
     scheduler = CosineAnnealingLR(
         optimizer,
         T_max=TrainingConfig.phase1_epochs,
@@ -55,29 +61,22 @@ def train_phase2(model, train_loader, val_loader, device):
     """第二阶段训练：解冻部分特征提取器并微调"""
     logging.info("\n开始第二阶段训练...")
     
-    # # 打印解冻前的参数状态
-    # logging.info(f"第二阶段将解冻最后 {TrainingConfig.phase2_layers_unfreeze} 层特征提取器")
-    # unfrozen_count = 0
-    # total_layers = len(list(model.model.features))
-    # logging.info(f"特征提取器总层数: {total_layers}")
-    
     # 解冻指定层数
     for param in model.model.features[-TrainingConfig.phase2_layers_unfreeze:].parameters():
         param.requires_grad = True
-        # unfrozen_count += 1
-    
-    # # 验证解冻状态
-    # logging.info(f"已解冻参数数量: {unfrozen_count}")
-    # logging.info("解冻的层:")
-    # for i, layer in enumerate(model.model.features):
-    #     if i >= total_layers - TrainingConfig.phase2_layers_unfreeze:
-    #         params_count = sum(p.numel() for p in layer.parameters() if p.requires_grad)
-    #         logging.info(f"  - 层 {i}: {layer.__class__.__name__}, 可训练参数: {params_count}")
     
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam([
-        {'params': model.model.features[-TrainingConfig.phase2_layers_unfreeze:].parameters(), 'lr': TrainingConfig.phase2_feature_lr},
-        {'params': model.model.classifier.parameters(), 'lr': TrainingConfig.phase2_classifier_lr}
+        {
+            'params': model.model.features[-TrainingConfig.phase2_layers_unfreeze:].parameters(), 
+            'lr': TrainingConfig.phase2_feature_lr,
+            'weight_decay': 1e-4  # 为特征提取器添加L2正则化
+        },
+        {
+            'params': model.model.classifier.parameters(), 
+            'lr': TrainingConfig.phase2_classifier_lr,
+            'weight_decay': 1e-4  # 为分类器添加L2正则化
+        }
     ])
     scheduler = CosineAnnealingLR(
         optimizer,
@@ -119,23 +118,10 @@ def train_model():
     train_dataset, val_dataset, _ = create_datasets(TrainingConfig.csv_path)
     
     # 创建数据加载器
-    train_loader = DataLoader(
-        train_dataset, 
-        batch_size=TrainingConfig.batch_size, 
-        shuffle=True, 
-        num_workers=TrainingConfig.num_workers,
-        pin_memory=True,
-        prefetch_factor=2,
-        persistent_workers=True
-    )
-    val_loader = DataLoader(
-        val_dataset, 
-        batch_size=TrainingConfig.batch_size, 
-        shuffle=False, 
-        num_workers=TrainingConfig.num_workers,
-        pin_memory=True,
-        prefetch_factor=2,
-        persistent_workers=True
+    train_loader, val_loader, _ = create_dataloaders(
+        TrainingConfig.csv_path,
+        TrainingConfig.batch_size,
+        TrainingConfig.num_workers
     )
     
     # 创建模型
@@ -147,15 +133,38 @@ def train_model():
     model, _, history_phase2 = train_phase2(model, train_loader, val_loader, device)
     
     # 保存完整训练历史
-    history = {
-        'phase1': history_phase1,
-        'phase2': history_phase2
+    # 保存完整训练历史和最终评估结果
+    final_results = {
+        'training_history': {
+            'phase1': history_phase1,
+            'phase2': history_phase2
+        },
+        'final_metrics': {
+            'phase1': history_phase1['val_metrics'][-1],
+            'phase2': history_phase2['val_metrics'][-1]
+        }
     }
+    
+    
     Path(TrainingConfig.checkpoint_dir).mkdir(parents=True, exist_ok=True)
-    with open(os.path.join(TrainingConfig.checkpoint_dir, 'training_history.json'), 'w') as f:
-        json.dump(history, f)
+    
+    # 保存训练历史
+    with open(os.path.join(TrainingConfig.checkpoint_dir, 'training_results.json'), 'w') as f:
+        json.dump(final_results, f, indent=4)
+    
+    # 打印最终结果
+    logging.info("\n最终评估结果:")
+    logging.info("第一阶段:")
+    for metric, value in final_results['final_metrics']['phase1'].items():
+        logging.info(f"{metric}: {value:.2f}%")
+    
+    logging.info("\n第二阶段:")
+    for metric, value in final_results['final_metrics']['phase2'].items():
+        logging.info(f"{metric}: {value:.2f}%")
     
     logging.info("训练完成！")
 
 if __name__ == '__main__':
     train_model()
+    # history_path = os.path.join(TrainingConfig.checkpoint_dir, 'training_results.json')
+    # plot_training_history(history_path)

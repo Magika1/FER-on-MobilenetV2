@@ -28,7 +28,6 @@ class TrainingConfig:
     # 早停参数
     patience = 10
     min_delta = 0.001
-
     # 实验配置
     experiment_name = "baseline"  # 当前实验名称
     experiments = {
