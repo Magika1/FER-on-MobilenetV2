@@ -22,9 +22,6 @@ class TrainingConfig:
     log_dir = 'f:/coding/Graduation_project/FER/logs'
     save_freq = 5  # 每隔多少个epoch保存一次检查点
     
-    # 删除冗余的模型路径配置
-    # model_phase1_path 和 model_phase2_path 不再需要，因为使用checkpoint_dir统一管理
-    
     # 早停参数
     patience = 10
     min_delta = 0.001

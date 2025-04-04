@@ -11,7 +11,7 @@ class EmotionClassifier:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = create_model(self.device)
         # 加载模型权重
-        checkpoint = torch.load('D:\program\FER-on-MobilenetV2\phase2_best.pth', map_location=self.device,weights_only=True)
+        checkpoint = torch.load('D:/program/FER-on-MobilenetV2/final.pth', map_location=self.device,weights_only=True)
         self.model.load_state_dict(checkpoint['model_state_dict'])  # 只加载模型权重
         self.model.eval()
         
@@ -52,8 +52,8 @@ class EmotionClassifier:
         fps = 1.0 / avg_time if avg_time > 0 else 0
         
         return {
-            'avg_inference_time': avg_time * 1000,  # 转换为毫秒
-            'fps': fps,
+            'avg_inference_time': round(avg_time * 1000, 2),  # 转换为毫秒并保留两位小数
+            'fps': round(fps, 1),
             'device': str(self.device)
         }
         
@@ -75,12 +75,16 @@ class EmotionClassifier:
             # 进行推理
             with torch.no_grad():
                 outputs = self.model(face_tensor)
-                probs = torch.nn.functional.softmax(outputs, dim=1)
-                pred_idx = torch.argmax(probs, dim=1).item()
-                confidence = probs[0][pred_idx].item()
+                probs = torch.nn.functional.softmax(outputs, dim=1)[0]
                 
-            emotion = self.labels[pred_idx]
-            emotions.append((emotion, confidence))
+                # 返回所有情绪的概率
+                emotion_probs = {self.labels[i]: prob.item() for i, prob in enumerate(probs)}
+                # 获取最高概率的情绪
+                pred_idx = torch.argmax(probs).item()
+                max_emotion = self.labels[pred_idx]
+                max_prob = probs[pred_idx].item()
+                
+            emotions.append((max_emotion, max_prob, emotion_probs))
         
         # 记录推理时间
         inference_time = time.time() - start_time

@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader
 from fer.dataset import create_datasets, create_dataloaders
 from fer.model import create_model
 from fer.config import TrainingConfig
@@ -14,7 +13,6 @@ import logging
 from fer.utils.logger import setup_logger
 from fer.utils.checkpoint import load_checkpoint
 from fer.utils.training import train_phase
-from fer.utils.visualize import plot_training_history
 
 
 def train_phase1(model, train_loader, val_loader, device):
@@ -166,5 +164,3 @@ def train_model():
 
 if __name__ == '__main__':
     train_model()
-    # history_path = os.path.join(TrainingConfig.checkpoint_dir, 'training_results.json')
-    # plot_training_history(history_path)

@@ -7,7 +7,6 @@ from sklearn.metrics import precision_recall_fscore_support, accuracy_score
 
 
 def calculate_metrics(y_true, y_pred):
-    """计算各项评估指标"""
     accuracy = accuracy_score(y_true, y_pred)
     precision, recall, f1, _ = precision_recall_fscore_support(y_true, y_pred, average='weighted')
     return {
@@ -47,7 +46,6 @@ def train_epoch(model, train_loader, criterion, optimizer, device, epoch):
     return running_loss/len(train_loader), 100.*correct/total
 
 def validate(model, val_loader, criterion, device):
-    """验证模型"""
     model.eval()
     running_loss = 0.0
     correct = 0

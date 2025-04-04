@@ -1,5 +1,5 @@
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 from PIL import Image
 import pandas as pd
 import numpy as np
@@ -7,12 +7,7 @@ from fer.utils.transforms import get_data_transforms
 
 class FERDataset(Dataset):
     def __init__(self, csv_file, transform=None, mode='train'):
-        """
-        Args:
-            csv_file (string): FER2013数据集的CSV文件路径
-            transform (callable, optional): 可选的图像转换
-            mode (string): 'train', 'val' 或 'test' 模式
-        """
+
         self.data_frame = pd.read_csv(csv_file)
         self.transform = transform
         self.mode = mode
@@ -51,9 +46,6 @@ class FERDataset(Dataset):
         return image, label
 
 def create_datasets(csv_file):
-    """
-    从FER2013数据集创建训练、验证和测试数据集
-    """
     train_transform, test_transform = get_data_transforms()
 
     datasets = {
@@ -65,9 +57,6 @@ def create_datasets(csv_file):
     return datasets['train'], datasets['val'], datasets['test']
 
 def create_dataloaders(csv_file, batch_size, num_workers):
-    """
-    创建训练、验证和测试数据加载器
-    """
     train_dataset, val_dataset, test_dataset = create_datasets(csv_file)
     
     train_loader = DataLoader(

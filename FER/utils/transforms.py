@@ -1,9 +1,6 @@
 import torchvision.transforms as transforms
 
 def get_data_transforms():
-    """
-    返回训练和测试数据的转换
-    """
     train_transform = transforms.Compose([
         transforms.Resize(256),
         transforms.CenterCrop(224),

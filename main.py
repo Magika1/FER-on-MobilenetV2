@@ -1,7 +1,6 @@
 import sys
 from PyQt6.QtWidgets import QApplication
 from ui.widgets import MainWindow
-
 def main():
     app = QApplication(sys.argv)
     window = MainWindow()
