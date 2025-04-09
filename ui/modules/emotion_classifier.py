@@ -4,17 +4,61 @@ import time
 import torchvision.transforms as transforms
 from PIL import Image
 from fer.model import create_model
+from utils.error_handler import ErrorHandler, ErrorType
+from PyQt6.QtWidgets import QMessageBox, QFileDialog
 
 class EmotionClassifier:
-    def __init__(self):
+    def __init__(self, parent=None):
+        self.parent = parent
         # 加载MobileNetV2模型
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = create_model(self.device)
-        # 加载模型权重
-        checkpoint = torch.load('D:/program/FER-on-MobilenetV2/final.pth', map_location=self.device,weights_only=True)
-        self.model.load_state_dict(checkpoint['model_state_dict'])  # 只加载模型权重
-        self.model.eval()
-        
+        try:
+            # 加载模型权重
+            checkpoint = torch.load('D:/program/FER-on-MobilenetV2/final.pth', 
+                                  map_location=self.device, weights_only=True)
+            self.model.load_state_dict(checkpoint['model_state_dict'])
+            self.model.eval()
+        except FileNotFoundError:
+            # 先提示未找到模型文件
+            reply = QMessageBox.question(
+                self.parent,
+                "模型文件未找到",
+                "未找到默认模型文件，是否要选择其他模型文件？",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.Yes
+            )
+            
+            if reply == QMessageBox.StandardButton.Yes:
+                # 让用户选择模型文件
+                model_path, _ = QFileDialog.getOpenFileName(
+                    self.parent,
+                    "选择模型文件",
+                    "",
+                    "PyTorch模型文件 (*.pth *.pt);;所有文件 (*.*)"
+                )
+                if model_path:
+                    try:
+                        checkpoint = torch.load(model_path, 
+                                             map_location=self.device, weights_only=True)
+                        self.model.load_state_dict(checkpoint['model_state_dict'])
+                        self.model.eval()
+                    except Exception as e:
+                        ErrorHandler.show_error(ErrorType.MODEL_LOAD, 
+                                             f"模型加载失败: {str(e)}", self.parent)
+                        raise
+                else:
+                    ErrorHandler.show_error(ErrorType.MODEL_LOAD, 
+                                         "未选择模型文件，程序将退出", self.parent)
+                    raise FileNotFoundError("用户未选择模型文件")
+            else:
+                ErrorHandler.show_error(ErrorType.MODEL_LOAD, 
+                                     "用户选择退出程序", self.parent)
+                raise FileNotFoundError("用户选择退出程序")
+        except Exception as e:
+            ErrorHandler.show_error(ErrorType.MODEL_LOAD, f"模型加载失败: {str(e)}")
+            raise
+            
         # 定义图像预处理
         self.transform = transforms.Compose([
             transforms.Resize(256),

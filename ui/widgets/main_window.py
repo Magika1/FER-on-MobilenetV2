@@ -36,15 +36,7 @@ class MainWindow(QWidget):
             )
             raise
 
-        try:
-            self.emotion_classifier = EmotionClassifier()
-        except Exception as e:
-            self.error_handler.show_error(
-                ErrorType.MODEL_LOAD,
-                f"表情识别模型加载失败: {str(e)}",
-                self
-            )
-            raise
+        self.emotion_classifier = EmotionClassifier(self)  # 传递self作为parent
 
         self.camera_manager = CameraManager()
         self.timer = QTimer()
