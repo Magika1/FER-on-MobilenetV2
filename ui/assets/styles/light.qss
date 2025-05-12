@@ -1,0 +1,56 @@
+/* 菜单栏样式 */
+QMenuBar {
+    background-color: #f0f0f0;
+    color: #333333;
+    font-size: 14px;
+}
+QMenuBar::item {
+    background: transparent;
+    padding: 5px 10px;
+}
+QMenuBar::item:selected {
+    background: #d0d0d0;
+}
+QMenu {
+    background-color: #f0f0f0;
+    color: #333333;
+    border: 1px solid #d0d0d0;
+}
+QMenu::item {
+    padding: 8px 25px;
+}
+QMenu::item:selected {
+    background-color: #d0d0d0;
+}
+
+/* 显示标签样式 */
+#display_label {
+    background-color: #e0e0e0;
+}
+
+/* Emoji标签样式 */
+#emoji_label {
+    font-size: 32px;
+    background-color: rgba(255, 255, 255, 0.7);
+    padding: 10px;
+    border-radius: 5px;
+    color: #333333;
+}
+
+/* 状态标签样式 */
+#status_label {
+    font-size: 24px;
+    background-color: rgba(255, 255, 255, 0.7);
+    padding: 10px;
+    border-radius: 5px;
+    color: #333333;
+}
+
+/* 性能标签样式 */
+#performance_label {
+    font-size: 16px;
+    color: #333333;
+    background-color: rgba(255, 255, 255, 0.7);
+    padding: 10px;
+    border-radius: 5px;
+}

@@ -15,7 +15,7 @@ class EmotionClassifier:
         self.model = create_model(self.device)
         try:
             # 加载模型权重
-            checkpoint = torch.load('D:/program/FER-on-MobilenetV2/final.pth', 
+            checkpoint = torch.load('final.pth', 
                                   map_location=self.device, weights_only=True)
             self.model.load_state_dict(checkpoint['model_state_dict'])
             self.model.eval()

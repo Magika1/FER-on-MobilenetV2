@@ -63,16 +63,24 @@ class MainWindow(QWidget):
         # 启动摄像头
         self.camera_manager.start_camera()
         self.timer.start(30)
-
         
+        # 添加样式相关变量
+        self.current_style = 'dark'
+
     def setup_signals(self):
         # 摄像头相关信号
         self.menu_bar.camera_changed.connect(self.on_camera_changed)
         self.camera_manager.camera_error.connect(self.on_camera_error)
         self.camera_manager.cameras_updated.connect(self.menu_bar.update_camera_list)
+        # 样式切换信号
+        self.menu_bar.style_changed.connect(self.on_style_changed)
         # 初始扫描摄像头
         self.camera_manager.scan_cameras()
 
+    def on_style_changed(self, style_name):
+        """处理样式切换事件"""
+        self.current_style = style_name
+        self.setStyleSheet(load_stylesheet(style_name, self.error_handler))
 
     @staticmethod
     def _draw_detection_results(frame, faces, emotions):
