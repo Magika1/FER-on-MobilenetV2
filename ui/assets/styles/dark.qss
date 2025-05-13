@@ -30,25 +30,69 @@ QMenu::item:selected {
 
 /* Emoji标签样式 */
 #emoji_label {
-    font-size: 32px;
-    background-color: rgba(0, 0, 0, 0.5);
-    padding: 10px;
-    border-radius: 5px;
+    font-size: 40px;
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #232526, stop:1 #414345);
+    color: #ffe066;
+    padding: 18px 0;
+    border-radius: 14px;
+    margin-bottom: 10px;
+    border: 2px solid #2d3748;
+    min-height: 60px;
 }
-
-/* 状态标签样式 */
 #status_label {
     font-size: 24px;
-    background-color: rgba(0, 0, 0, 0.5);
-    padding: 10px;
-    border-radius: 5px;
+    font-weight: bold;
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #232526, stop:1 #414345);
+    color: #00e676;
+    padding: 14px 0;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    border: 2px solid #2d3748;
+    min-height: 48px;
 }
-
-/* 性能标签样式 */
+#status_label[detected="false"] {
+    color: #ff5252;
+}
 #performance_label {
-    font-size: 16px;
+    font-size: 18px;
+    color: #b2bec3;
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #232526, stop:1 #414345);
+    padding: 18px 0;
+    border-radius: 14px;
+    margin-bottom: 10px;
+    border: 2px solid #2d3748;
+    min-height: 64px;
+}
+QPushButton {
+    background-color: #3498db;
     color: white;
-    background-color: rgba(0, 0, 0, 0.5);
-    padding: 10px;
-    border-radius: 5px;
+    border-radius: 6px;
+    padding: 8px 18px;
+    border: none;
+    font-size: 15px;
+    font-weight: 500;
+}
+QPushButton:hover {
+    background-color: #217dbb;
+}
+QPushButton:pressed {
+    background-color: #145a86;
+}
+#btn_save {
+    background-color: #27ae60;
+}
+#btn_save:hover {
+    background-color: #219150;
+}
+#btn_reset {
+    background-color: #f39c12;
+}
+#btn_reset:hover {
+    background-color: #c87f0a;
+}
+#btn_exit {
+    background-color: #e74c3c;
+}
+#btn_exit:hover {
+    background-color: #c0392b;
 }

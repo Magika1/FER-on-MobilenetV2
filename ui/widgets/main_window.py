@@ -36,7 +36,8 @@ class MainWindow(QWidget):
             )
             raise
 
-        self.emotion_classifier = EmotionClassifier(self)  # 传递self作为parent
+        # self.emotion_classifier = EmotionClassifier(self)  # 传递self作为parent
+        self.emotion_classifier = None  # 延迟加载
 
         self.camera_manager = CameraManager()
         self.timer = QTimer()
@@ -179,6 +180,8 @@ class MainWindow(QWidget):
                 return
                 
             try:
+                if self.emotion_classifier is None:
+                    self.emotion_classifier = EmotionClassifier(self)
                 emotions = self.emotion_classifier.classify(frame, faces)
                 stats = self.emotion_classifier.get_performance_stats()
                 # 对情绪进行平滑处理
