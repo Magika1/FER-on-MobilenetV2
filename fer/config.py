@@ -1,6 +1,6 @@
 class TrainingConfig:
     # 数据集配置
-    csv_path = 'f:/coding/Graduation_project/FER/fer2013.csv'
+    csv_path = 'f:/coding/Graduation_project/fer/fer2013.csv'
     batch_size = 64
     num_workers = 4
 
@@ -18,8 +18,8 @@ class TrainingConfig:
     phase2_layers_unfreeze = 6  # 解冻的层数
 
     # 修改模型保存相关配置
-    checkpoint_dir = 'f:/coding/Graduation_project/FER/checkpoints'
-    log_dir = 'f:/coding/Graduation_project/FER/logs'
+    checkpoint_dir = 'f:/coding/Graduation_project/fer/checkpoints'
+    log_dir = 'f:/coding/Graduation_project/fer/logs'
     save_freq = 5  # 每隔多少个epoch保存一次检查点
     
     # 早停参数

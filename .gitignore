@@ -1,4 +1,4 @@
-FER/fer2013.csv
+fer/fer2013.csv
 phase2_best_model.pth
 # 模型文件和数据集
 *.pth

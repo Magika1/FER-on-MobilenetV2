@@ -144,13 +144,13 @@ if __name__ == '__main__':
     from fer.config import TrainingConfig
     
     # 模型和数据集配置
-    csv_file = 'D:\\program\\FER-on-MobilenetV2\\fer2013.csv'
+    csv_file = 'D:\\program\\fer-on-MobilenetV2\\fer2013.csv'
     class_names = ['愤怒', '厌恶', '恐惧', '高兴', '中性', '悲伤', '惊讶']
     
     # 创建模型并加载权重
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = create_model(device)
-    checkpoint = torch.load('D:/program/FER-on-MobilenetV2/final.pth', map_location=device,weights_only=True)
+    checkpoint = torch.load('D:/program/fer-on-MobilenetV2/final.pth', map_location=device,weights_only=True)
     model.load_state_dict(checkpoint['model_state_dict'])
 
     
