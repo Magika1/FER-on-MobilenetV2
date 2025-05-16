@@ -23,6 +23,11 @@ QMenu::item:selected {
     background-color: #404040;
 }
 
+/* 主窗口背景 */
+QWidget {
+    background-color: #1e272e;
+}
+
 /* 显示标签样式 */
 #display_label {
     background-color: black;

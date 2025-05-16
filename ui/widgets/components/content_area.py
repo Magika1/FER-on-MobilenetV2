@@ -13,7 +13,7 @@ class ContentArea(QWidget):
         super().__init__(parent)
         self.setup_ui()
         # 绑定按钮功能
-        self.btn_save.clicked.connect(self.save_screenshot)
+        self.btn_save.clicked.connect(self.save_stats)  # 修改连接到新的保存统计方法
         self.btn_reset.clicked.connect(self.reset_status)
         self.btn_exit.clicked.connect(self.exit_app)
         self._last_frame = None  # 用于保存当前帧
@@ -91,12 +91,12 @@ class ContentArea(QWidget):
         layout = QHBoxLayout(bar)
         layout.setSpacing(10)
         layout.setContentsMargins(0, 0, 0, 0)
-        # 保存截图按钮
-        self.btn_save = QPushButton("保存截图")
+        # 保存统计结果按钮
+        self.btn_save = QPushButton("保存统计结果")
         self.btn_save.setObjectName("btn_save")
         layout.addWidget(self.btn_save)
-        # 重置状态按钮
-        self.btn_reset = QPushButton("重置状态")
+        # 重置统计按钮
+        self.btn_reset = QPushButton("重置统计")
         self.btn_reset.setObjectName("btn_reset")
         layout.addWidget(self.btn_reset)
         # 退出按钮
@@ -106,6 +106,33 @@ class ContentArea(QWidget):
         layout.addStretch()
         return bar
         
+    def save_stats(self):
+        """保存情绪变化历史数据为CSV文件"""
+        if not hasattr(self, '_emotion_history') or not self._emotion_history:
+            return
+            
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "保存情绪历史", "emotion_history.csv", "CSV Files (*.csv)"
+        )
+        if file_path:
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write("时间(秒),情绪类型,置信度\n")
+                for timestamp, emotion, confidence in self._emotion_history:
+                    f.write(f"{timestamp:.2f},{emotion},{confidence:.3f}\n")
+                    
+    def reset_status(self):
+        """重置统计数据"""
+        if hasattr(self, 'window') and hasattr(self.window(), 'emotion_history'):
+            self.window().emotion_history = []
+            self.window().total_frames = 0
+        self.emoji_label.setText("❓")
+        self.status_label.setText("未检测到人脸")
+        self.status_label.setProperty("detected", False)
+        self.status_label.style().unpolish(self.status_label)
+        self.status_label.style().polish(self.status_label)
+        self.performance_label.setText("")
+        self.display_label.clear()
+                    
     def update_ui(self, data):
         """更新UI显示"""
         frame = data['frame']
@@ -113,7 +140,10 @@ class ContentArea(QWidget):
         face_detected = data['face_detected']
         emotions = data['emotions']
         stats = data['stats']
-        self._last_frame = frame.copy()  # 保存当前帧
+        if 'emotion_stats' in data:  # 保存统计数据
+            self._last_stats = data['emotion_stats']
+        self._emotion_history = data['emotion_history']
+        self._last_frame = frame.copy()
         self._update_display(frame)
         self._update_status(face_detected, faces)
         self._update_emotions(faces, emotions)
@@ -157,24 +187,6 @@ class ContentArea(QWidget):
             f"Device: {stats['device']}"
         )
         self.performance_label.setText(performance_text)
-
-    def save_screenshot(self):
-        """保存当前显示画面为图片文件"""
-        if self._last_frame is None:
-            return
-        file_path, _ = QFileDialog.getSaveFileName(self, "保存截图", "screenshot.png", "PNG Files (*.png);;JPEG Files (*.jpg *.jpeg)")
-        if file_path:
-            cv2.imwrite(file_path, cv2.cvtColor(self._last_frame, cv2.COLOR_RGB2BGR))
-
-    def reset_status(self):
-        """重置表情、状态和性能显示"""
-        self.emoji_label.setText("❓")
-        self.status_label.setText("未检测到人脸")
-        self.status_label.setProperty("detected", False)
-        self.status_label.style().unpolish(self.status_label)
-        self.status_label.style().polish(self.status_label)
-        self.performance_label.setText("")
-        self.display_label.clear()
 
     def exit_app(self):
         """关闭主窗口"""

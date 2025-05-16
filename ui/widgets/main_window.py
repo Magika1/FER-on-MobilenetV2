@@ -25,6 +25,12 @@ class MainWindow(QWidget):
         self.current_emotion = None  # 当前显示的情绪
         self.emotion_threshold = 0.6  # 情绪切换阈值
         
+        # 修改情绪统计数据结构
+        self.emotion_history = []  # 存储时间序列数据，每项格式为 (timestamp, emotion, confidence)
+        self.max_history_size = 1000  # 最多保存1000个数据点
+        self.stats_interval = 5  # 每5帧记录一次
+        self.total_frames = 0  # 添加帧计数器初始化
+        
         # 初始化模块
         try:
             self.face_detector = FaceDetector()
@@ -36,8 +42,7 @@ class MainWindow(QWidget):
             )
             raise
 
-        # self.emotion_classifier = EmotionClassifier(self)  # 传递self作为parent
-        self.emotion_classifier = None  # 延迟加载
+        self.emotion_classifier = EmotionClassifier(self)  # 传递self作为parent
 
         self.camera_manager = CameraManager()
         self.timer = QTimer()
@@ -180,12 +185,21 @@ class MainWindow(QWidget):
                 return
                 
             try:
-                if self.emotion_classifier is None:
-                    self.emotion_classifier = EmotionClassifier(self)
                 emotions = self.emotion_classifier.classify(frame, faces)
                 stats = self.emotion_classifier.get_performance_stats()
-                # 对情绪进行平滑处理
                 smoothed_emotions = self._get_smoothed_emotion(emotions)
+                
+                # 每隔一定帧数记录情绪数据
+                self.total_frames += 1
+                if self.total_frames % self.stats_interval == 0 and smoothed_emotions:
+                    # 只记录第一个检测到的人脸的情绪
+                    emotion, confidence = smoothed_emotions[0]
+                    timestamp = self.total_frames * (1.0 / 30)  # 假设30fps，计算时间戳
+                    self.emotion_history.append((timestamp, EMOTION_NAMES[EMOTION_MAPPING[emotion]], confidence))
+                    # 保持历史记录在限定大小内
+                    if len(self.emotion_history) > self.max_history_size:
+                        self.emotion_history.pop(0)
+                        
             except Exception as e:
                 self.error_handler.show_error(
                     ErrorType.MODEL_INFERENCE,
@@ -196,12 +210,14 @@ class MainWindow(QWidget):
             
             # 使用平滑后的情绪结果进行绘制和更新UI
             self._draw_detection_results(frame_rgb, faces, smoothed_emotions)
+            # 更新UI时传递情绪历史数据
             self.content_area.update_ui({
                 'frame': frame_rgb,
                 'faces': faces,
                 'face_detected': face_detected,
                 'emotions': smoothed_emotions,
-                'stats': stats
+                'stats': stats,
+                'emotion_history': self.emotion_history
             })
             
         except Exception as e:
