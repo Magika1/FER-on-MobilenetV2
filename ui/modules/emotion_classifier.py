@@ -16,7 +16,7 @@ class EmotionClassifier:
         try:
             # 加载模型权重
             checkpoint = torch.load('final.pth', 
-                                  map_location=self.device, weights_only=True)
+                                map_location=self.device, weights_only=True)
             self.model.load_state_dict(checkpoint['model_state_dict'])
             self.model.eval()
         except FileNotFoundError:
@@ -40,20 +40,20 @@ class EmotionClassifier:
                 if model_path:
                     try:
                         checkpoint = torch.load(model_path, 
-                                             map_location=self.device, weights_only=True)
+                                            map_location=self.device, weights_only=True)
                         self.model.load_state_dict(checkpoint['model_state_dict'])
                         self.model.eval()
                     except Exception as e:
                         ErrorHandler.show_error(ErrorType.MODEL_LOAD, 
-                                             f"模型加载失败: {str(e)}", self.parent)
+                                            f"模型加载失败: {str(e)}", self.parent)
                         raise
                 else:
                     ErrorHandler.show_error(ErrorType.MODEL_LOAD, 
-                                         "未选择模型文件，程序将退出", self.parent)
+                                        "未选择模型文件，程序将退出", self.parent)
                     raise FileNotFoundError("用户未选择模型文件")
             else:
                 ErrorHandler.show_error(ErrorType.MODEL_LOAD, 
-                                     "用户选择退出程序", self.parent)
+                                    "用户选择退出程序", self.parent)
                 raise FileNotFoundError("用户选择退出程序")
         except Exception as e:
             ErrorHandler.show_error(ErrorType.MODEL_LOAD, f"模型加载失败: {str(e)}")
@@ -102,6 +102,14 @@ class EmotionClassifier:
         }
         
     def classify(self, frame, faces):
+        """
+        表情分类函数
+        参数：
+            frame: 输入图像帧
+            faces: 检测到的人脸位置列表
+        返回：
+            emotions: 分类结果列表，每个元素为一个元组，包含最大概率的情绪标签、最大概率和所有情绪的概率字典
+        """
         emotions = []
         start_time = time.time()
         

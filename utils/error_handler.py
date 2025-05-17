@@ -15,6 +15,7 @@ class ErrorType(Enum):
 class ErrorHandler:
     @staticmethod
     def show_error(error_type: ErrorType, message: str, parent=None):
+        """显示错误对话框"""
         title_map = {
             ErrorType.CAMERA: "摄像头错误",
             ErrorType.UI: "界面错误",

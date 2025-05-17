@@ -19,6 +19,7 @@ class ContentArea(QWidget):
         self._last_frame = None  # 用于保存当前帧
         
     def setup_ui(self):
+        """设置UI布局"""
         self.setMinimumHeight(250)
         self.layout = QGridLayout(self)
         self.layout.setSpacing(10)
@@ -31,6 +32,7 @@ class ContentArea(QWidget):
         self.layout.setColumnStretch(3, 1)
         
     def _create_left_panel(self):
+        """创建左侧面板"""
         left_panel = QWidget()
         self.left_layout = QVBoxLayout(left_panel)
         self.left_layout.setSpacing(10)
@@ -40,6 +42,7 @@ class ContentArea(QWidget):
         self.layout.addWidget(left_panel, 0, 0, 1, 3)
         
     def _create_right_panel(self):
+        """创建右侧面板"""
         right_panel = QWidget()
         self.right_layout = QVBoxLayout(right_panel)
         self.right_layout.setSpacing(20)
@@ -56,6 +59,7 @@ class ContentArea(QWidget):
         self.layout.addWidget(right_panel, 0, 3, 1, 1)
         
     def _create_display_label(self):
+        """创建显示标签"""
         label = QLabel()
         label.setObjectName("display_label")
         label.setMinimumSize(800, 450)
@@ -65,6 +69,7 @@ class ContentArea(QWidget):
         return label
         
     def _create_emoji_label(self):
+        """创建表情标签"""
         label = QLabel()
         label.setObjectName("emoji_label")
         label.setFixedHeight(60)
@@ -73,6 +78,7 @@ class ContentArea(QWidget):
         return label
         
     def _create_status_label(self):
+        """创建状态标签"""
         label = QLabel("未检测到人脸")
         label.setObjectName("status_label")
         label.setFixedHeight(50)
@@ -80,6 +86,7 @@ class ContentArea(QWidget):
         return label
         
     def _create_performance_label(self):
+        """创建性能信息标签"""
         label = QLabel()
         label.setObjectName("performance_label")
         label.setFixedHeight(80)
@@ -87,6 +94,7 @@ class ContentArea(QWidget):
         return label
         
     def _create_button_bar(self):
+        """创建按钮区域"""
         bar = QWidget()
         layout = QHBoxLayout(bar)
         layout.setSpacing(10)

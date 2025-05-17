@@ -10,6 +10,7 @@ class MenuBar(QMenuBar):
         self.setup_ui()
         
     def setup_ui(self):
+        """设置UI"""
         # 摄像头菜单
         self.camera_menu = QMenu('摄像头', self)
         self.addMenu(self.camera_menu)

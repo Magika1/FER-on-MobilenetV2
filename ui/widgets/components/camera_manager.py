@@ -50,6 +50,7 @@ class CameraManager(QObject):
             return []
 
     def start_camera(self, camera_id=None):
+        """启动摄像头"""
         try:
             if camera_id is not None:
                 self.current_camera = camera_id
@@ -113,6 +114,7 @@ class CameraManager(QObject):
             return None
         
     def release(self):
+        """释放摄像头资源"""
         if self.cap is not None and self.cap.isOpened():
             self.cap.release()
             self.cap = None

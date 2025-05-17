@@ -74,6 +74,7 @@ class MainWindow(QWidget):
         self.current_style = 'dark'
 
     def setup_signals(self):
+        """设置信号连接"""
         # 摄像头相关信号
         self.menu_bar.camera_changed.connect(self.on_camera_changed)
         self.camera_manager.camera_error.connect(self.on_camera_error)
@@ -100,7 +101,7 @@ class MainWindow(QWidget):
 
             label = f"{emotion}: {score:.2f}"
             cv2.putText(frame, label, (x, y - 10),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
 
     def on_camera_changed(self, camera_id):
         """处理摄像头切换事件"""

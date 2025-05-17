@@ -5,6 +5,7 @@ import logging
 from ..config import TrainingConfig
 
 def save_checkpoint(state, is_best, phase, filename='checkpoint.pth'):
+    """保存检查点"""
     Path(TrainingConfig.checkpoint_dir).mkdir(parents=True, exist_ok=True)
     
     # 保存最新的检查点
@@ -18,6 +19,7 @@ def save_checkpoint(state, is_best, phase, filename='checkpoint.pth'):
         logging.info(f'保存最佳模型，验证准确率: {state["best_val_acc"]:.2f}%')
 
 def load_checkpoint(phase, filename='latest.pth'):
+    """加载检查点"""
     best_path = os.path.join(TrainingConfig.checkpoint_dir, f'phase{phase}_best.pth')
     latest_path = os.path.join(TrainingConfig.checkpoint_dir, f'phase{phase}_latest.pth')
     

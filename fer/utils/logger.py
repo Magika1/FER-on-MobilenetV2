@@ -5,6 +5,7 @@ from datetime import datetime
 from ..config import TrainingConfig
 
 def setup_logger():
+    """设置日志记录"""
     Path(TrainingConfig.log_dir).mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
         filename=os.path.join(TrainingConfig.log_dir, f'training_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log'),

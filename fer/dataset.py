@@ -46,6 +46,7 @@ class FERDataset(Dataset):
         return image, label
 
 def create_datasets(csv_file):
+    """创建训练、验证和测试数据集"""
     train_transform, test_transform = get_data_transforms()
 
     datasets = {
@@ -57,6 +58,7 @@ def create_datasets(csv_file):
     return datasets['train'], datasets['val'], datasets['test']
 
 def create_dataloaders(csv_file, batch_size, num_workers):
+    """创建数据加载器"""
     train_dataset, val_dataset, test_dataset = create_datasets(csv_file)
     
     train_loader = DataLoader(
