@@ -64,7 +64,7 @@
 - `main.py`: 应用程序的启动入口。
 - `fer/`: 包含面部情绪识别的核心深度学习模型和相关脚本。
   - `model.py`: 定义了 `EmotionMobileNetV2` 模型结构。
-  - `train.py`: (推测) 用于训练情绪识别模型的脚本。
+  - `train.py`: 用于训练情绪识别模型的脚本。
 - `ui/`: 负责图形用户界面的所有组件和逻辑。
   - `widgets/main_window.py`: 主应用窗口，协调各个 UI 组件和核心处理逻辑。
   - `widgets/components/`: 可复用的 UI 组件，如 `ContentArea` (内容显示区), `MenuBar` (菜单栏), `CameraManager` (摄像头管理器)。
@@ -77,7 +77,7 @@
 - `utils/`: 通用辅助模块。
   - `error_handler.py`: 统一的错误处理机制。
 - `requirements.txt`: 项目依赖的 Python 包列表。
-- `final.pth`: (推测) 自定义 MobileNetV2 情绪分类模型的预训练权重文件。
+- `final.pth`: MobileNetV2 情绪分类模型的预训练权重文件。
 
 ## 情绪模型详情
 
