@@ -1,5 +1,7 @@
 fer/fer2013.csv
 phase2_best_model.pth
+答辩稿.md
+论文.md
 # 模型文件和数据集
 *.pth
 *.pt

@@ -2,7 +2,7 @@ import cv2
 from collections import deque
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QMessageBox
 from PyQt6.QtCore import QTimer, pyqtSignal
-from ui.modules import FaceDetector, EmotionClassifier
+from ui.modules import FaceDetector, EmotionClassifier, EmotionClassifierNew
 from ui.utils import load_stylesheet
 from ui.assets import (
     EMOTION_MAPPING, EMOTION_NAMES, EMOJI_MAPPING,
@@ -32,17 +32,11 @@ class MainWindow(QWidget):
         self.total_frames = 0  # 添加帧计数器初始化
         
         # 初始化模块
-        try:
-            self.face_detector = FaceDetector()
-        except Exception as e:
-            self.error_handler.show_error(
-                ErrorType.MODEL_LOAD,
-                f"人脸检测模型加载失败: {str(e)}",
-                self
-            )
-            raise
+        self.face_detector = FaceDetector(self)  # 传递self作为parent
 
-        self.emotion_classifier = EmotionClassifier(self)  # 传递self作为parent
+        # 初始化分类器
+        self.current_classifier = 'mobilenet'  # 默认使用MobileNetV2
+        self.emotion_classifier = self._create_classifier(self.current_classifier)
 
         self.camera_manager = CameraManager()
         self.timer = QTimer()
@@ -73,6 +67,13 @@ class MainWindow(QWidget):
         # 添加样式相关变量
         self.current_style = 'dark'
 
+    def _create_classifier(self, classifier_type):
+        """创建表情分类器实例"""
+        if classifier_type == 'deepface':
+            return EmotionClassifierNew(self)
+        else:  # 默认使用MobileNetV2
+            return EmotionClassifier(self)
+
     def setup_signals(self):
         """设置信号连接"""
         # 摄像头相关信号
@@ -81,8 +82,37 @@ class MainWindow(QWidget):
         self.camera_manager.cameras_updated.connect(self.menu_bar.update_camera_list)
         # 样式切换信号
         self.menu_bar.style_changed.connect(self.on_style_changed)
+        # 分类器切换信号
+        self.menu_bar.classifier_changed.connect(self.on_classifier_changed)
         # 初始扫描摄像头
         self.camera_manager.scan_cameras()
+
+    def on_classifier_changed(self, classifier_type):
+        """处理分类器切换事件"""
+        if classifier_type == self.current_classifier:
+            return
+            
+        try:
+            # 停止定时器
+            self.timer.stop()
+            # 清空情绪窗口
+            self.emotion_window.clear()
+            # 创建新的分类器
+            self.emotion_classifier = self._create_classifier(classifier_type)
+            self.current_classifier = classifier_type
+            # 重启定时器
+            self.timer.start(30)
+            
+            # 显示切换成功消息
+            classifier_name = "DeepFace" if classifier_type == 'deepface' else "MobileNetV2"
+            QMessageBox.information(self, "分类器切换", f"已切换到 {classifier_name} 表情分类器")
+            
+        except Exception as e:
+            self.error_handler.show_error(
+                ErrorType.MODEL_LOAD,
+                f"切换分类器失败: {str(e)}",
+                self
+            )
 
     def on_style_changed(self, style_name):
         """处理样式切换事件"""

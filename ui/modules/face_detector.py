@@ -1,13 +1,23 @@
 import cv2
 import mediapipe as mp
+from utils.error_handler import ErrorHandler, ErrorType
 
 class FaceDetector:
-    def __init__(self):
-        self.mp_face_detection = mp.solutions.face_detection
-        self.face_detection = self.mp_face_detection.FaceDetection(
-            min_detection_confidence=0.5,
-            model_selection=1
-        )
+    def __init__(self, parent=None):
+        self.parent = parent
+        try:
+            self.mp_face_detection = mp.solutions.face_detection
+            self.face_detection = self.mp_face_detection.FaceDetection(
+                min_detection_confidence=0.5,
+                model_selection=1
+            )
+        except Exception as e:
+            ErrorHandler.show_error(
+                ErrorType.MODEL_LOAD,
+                f"人脸检测模型加载失败: {str(e)}",
+                self.parent
+            )
+            raise
 
     def detect(self, frame):
         """

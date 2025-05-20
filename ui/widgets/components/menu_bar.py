@@ -4,6 +4,7 @@ from PyQt6.QtCore import pyqtSignal
 class MenuBar(QMenuBar):
     camera_changed = pyqtSignal(int)
     style_changed = pyqtSignal(str)
+    classifier_changed = pyqtSignal(str)  # 添加分类器切换信号
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -22,6 +23,14 @@ class MenuBar(QMenuBar):
         light_action = self.style_menu.addAction("浅色主题")
         light_action.triggered.connect(lambda: self.style_changed.emit('light'))
         self.addMenu(self.style_menu)
+        
+        # 添加表情分类器选择菜单
+        self.classifier_menu = QMenu('表情分类器', self)
+        mobilenet_action = self.classifier_menu.addAction("MobileNetV2")
+        mobilenet_action.triggered.connect(lambda: self.classifier_changed.emit('mobilenet'))
+        deepface_action = self.classifier_menu.addAction("DeepFace")
+        deepface_action.triggered.connect(lambda: self.classifier_changed.emit('deepface'))
+        self.addMenu(self.classifier_menu)
 
     def update_camera_list(self, cameras):
         """更新摄像头菜单列表"""
