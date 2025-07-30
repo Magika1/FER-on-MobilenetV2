@@ -89,7 +89,7 @@
 
 1.  **克隆仓库**:
     ```bash
-    git clone <your_repository_url>
+    git clone https://github.com/Magika1/FER-on-MobilenetV2
     cd FER-on-MobilenetV2
     ```
 2.  **创建并激活虚拟环境** (推荐):
